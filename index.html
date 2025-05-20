@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Busca de Produtos</title>
+    
+    <!-- Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* CSS */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --background-color: #f8f9fa;
+            --text-color: #2c3e50;
+        }
+
+        body {
+            background-color: var(--background-color);
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 15%;
+            background-color: white;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .logo {
+            padding: 20px 0;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .nav-menu {
+            list-style: none;
+        }
+
+        .nav-item {
+            margin-bottom: 10px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 15px;
+            color: var(--text-color);
+            text-decoration: none;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            margin-left: 15%; /* Igual à largura da sidebar */
+        }
+
+        .search-container {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .input-group {
+            flex: 1;
+            position: relative;
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 35px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-btn {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .search-btn:hover {
+            background-color: #2980b9;
+        }
+
+        .clear-btn {
+            background-color: var(--accent-color);
+            color: white;
+            padding: 12px;
+        }
+
+        .results-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: var(--secondary-color);
+        }
+
+        /* Container principal do conteúdo + visualização */
+        .content-wrapper {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        /* Estilos para a visualização do estoque */
+        .stock-view {
+            margin-left: 80px;
+            margin-right: 50px;
+            flex: 1;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 800px;
+        }
+
+        .plant-container-static {
+            position: relative;
+            width: 650px;
+            height: 650px;
+            background-image: 
+                linear-gradient(rgba(200, 200, 200, 0.3) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(200, 200, 200, 0.3) 1px, transparent 1px);
+            background-size: 20px 20px;
+            background-color: white;
+            border: 1px solid #ddd;
+            overflow: hidden;
+        }
+
+        .cabinet-static {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: white;
+            user-select: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .cabinet-static:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        }
+
+        .cabinet-static.grande {
+            width: 100px;
+            height: 60px;
+            background-color: var(--secondary-color);
+        }
+
+        .cabinet-static.pequeno {
+            width: 40px;
+            height: 60px;
+            background-color: #27ae60;
+        }
+
+        /* Estilos para a visualização do armário */
+        .cabinet-display {
+            width: 350px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 30px;
+        }
+
+        .cabinet-display-title {
+            font-size: 18px;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .cabinet-view {
+            position: relative;
+            width: 100%;
+            border: 2px solid var(--primary-color);
+            margin-top: 10px;
+            background-color: #f9f9f9;
+            overflow: hidden;
+        }
+
+        .cabinet-view.grande {
+            height: 680px;
+        }
+
+        .cabinet-view.pequeno {
+            height: 550px;
+            width: 100px;
+        }
+
+        .shelf {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #e0e0e0;
+            border: 1px solid #ccc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: var(--text-color);
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.1);
+        }
+
+        .shelf.grande {
+            width: 90%;
+            height: 100px;
+        }
+
+        .shelf.pequeno {
+            width: 90%;
+            height: 80px;
+        }
+
+        .shelf-label {
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .product-display {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin: 5px;
+            display: inline-block;
+            font-size: 11px;
+        }
+
+        /* Posicionamento das prateleiras */
+        .shelf-6 { top: 10px; }
+        .shelf-5 { top: 120px; }
+        .shelf-4 { top: 230px; }
+        .shelf-3 { top: 340px; }
+        .shelf-2 { top: 450px; }
+        .shelf-1 { top: 560px; }
+
+        .shelf-6.pequeno { top: 10px; }
+        .shelf-5.pequeno { top: 100px; }
+        .shelf-4.pequeno { top: 190px; }
+        .shelf-3.pequeno { top: 280px; }
+        .shelf-2.pequeno { top: 370px; }
+        .shelf-1.pequeno { top: 460px; }
+
+        /* Responsividade */
+        @media (max-width: 1400px) {
+            .content-wrapper {
+                flex-direction: column;
+            }
+            
+            .cabinet-display {
+                width: 100%;
+                max-width: 800px;
+                position: relative;
+                top: auto;
+            }
+            
+            .plant-container-static {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .stock-view {
+                flex-direction: column;
+            }
+            
+            .plant-container-static {
+                width: 100%;
+                height: 500px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                position: relative;
+                height: auto;
+            }
+
+            .main-content {
+                width: 100%;
+                margin-left: 0;
+                padding: 15px;
+            }
+
+            .search-box {
+                flex-direction: column;
+            }
+
+            table {
+                overflow-x: auto;
+                display: block;
+            }
+            
+            .plant-container-static {
+                height: 400px;
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        /* Estilo para os marcadores de localização */
+        .location-marker {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: #e74c3c;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 0 0 2px #e74c3c;
+            z-index: 10;
+        }
+
+        .cabinet-marker {
+            top: 5px;
+            right: 5px;
+        }
+
+        .shelf-marker {
+            bottom: 5px;
+            right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <img src="/d7f55c03-70f4-42be-9805-393122158e69___c038bed40f3763fc3be4ff844f7483ec.png" alt="Logo">
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="/index.html" class="nav-link active">
+                        <i class="fas fa-search"></i>
+                        <span>Busca de Produtos</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/criarestoque.html" class="nav-link">
+                        <i class="fas fa-warehouse"></i>
+                        <span>Criar Estoque</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="/adicionar.html" class="nav-link ">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Adicionar Produtos</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Conteúdo Principal -->
+        <div class="main-content">
+            <!-- Formulário de Busca -->
+            <div class="search-container">
+                <div class="search-box">
+                    <div class="input-group">
+                        <i class="fa fa-barcode"></i>
+                        <input type="text" id="codigo" placeholder="Código do Produto">
+                    </div>
+                    <div class="input-group">
+                        <i class="fa fa-file-invoice"></i>
+                        <input type="text" id="rct" placeholder="RCT">
+                    </div>
+                    <div class="button-group">
+                        <button onclick="realizarBusca()" class="btn search-btn">
+                            <i class="fa fa-search"></i> Buscar
+                        </button>
+                        <button onclick="limparBusca()" class="btn clear-btn">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resultados -->
+            <div class="results-container">
+                <div class="loading" id="loading">Carregando...</div>
+                <table id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th>Código de Barras</th>
+                            <th>RCT</th>
+                            <th>Promocional</th>
+                            <th>Valor Tabela</th>
+                            <th>Saldo</th>
+                            <th>Localização</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Resultados serão inseridos aqui via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Container para estoque + visualização do armário -->
+            <div class="content-wrapper">
+                <!-- Visualização do estoque -->
+                <div class="stock-view">
+                    <div class="plant-container-static" id="plantContainerStatic">
+                        <!-- Armários serão renderizados aqui -->
+                    </div>
+                </div>
+                
+                <!-- Visualização do armário -->
+                <div class="cabinet-display">
+                    <h2 class="cabinet-display-title">
+                        <i class="fas fa-archive"></i> Visualização do Armário
+                    </h2>
+                    <div id="cabinetDisplayInfo">
+                        <p>Selecione um armário para visualizar detalhes</p>
+                    </div>
+                    <div id="cabinetView" class="cabinet-view">
+                        <!-- Prateleiras serão renderizadas aqui -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const tabelaTotalDeProdutos = {
+  produtos: [
+    {
+      codigo: 0843275130085,
+      rct: "RUF3D3203BZ41U",
+      precoPromocao: 0,
+      precoTabela: 169.99,
+      saldo: 1,
+      localizacao: ""
+    },
+    {
+      codigo: 0843275130726,
+      rct: "RUBT3B0380BZB4U",
+      precoPromocao: 0,
+      precoTabela: 229.99,
+      saldo: 1,
+      localizacao: ""
+    },
+    {
+      codigo: 1200143001011,
+      rct: "100000108MEXOBC38",
+      precoPromocao: 449.99,
+      precoTabela: 549.99,
+      saldo: 1,
+      localizacao: ""
+    },
+    {
+      codigo: 1200143001073,
+      rct: "100000108MEXOBC42",
+      precoPromocao: 449.99,
+      precoTabela: 549.99,
+      saldo: 1,
+      localizacao: ""
+    },
+    {
+      codigo: 1200143001240,
+      rct: "100000109MEXOPT38",
+      precoPromocao: 449.99,
+      precoTabela: 549.99,
+      saldo: 1,
+      localizacao: ""
+    },
+    {
+      codigo: 1200143001271,
+      rct: "100000109MEXOPT40",
+      precoPromocao: 449.99,
+      precoTabela: 549.99,
+      saldo: 1,
+      localizacao: ""
+    },
+    {
+      codigo: 1200143001301,
+      rct: "100000109MEXOPT42",
+      precoPromocao: 449.99,
+      precoTabela: 549.99,
+      saldo: 1,
+      localizacao: ""
+    },
+    {
+      codigo: 1200143001875,
+      rct: "100000120WPRIPT35",
+      precoPromocao: 229.99,
+      precoTabela: 449.99,
+      saldo: 1,
+      localizacao: ""
+    },
+    {
+      codigo: 1200143013311,
+      rct: "100074325MCLNCZ38",
+      precoPromocao: 0,
+      precoTabela: 549.99,
+      saldo: 1,
+      localizacao: ""
+    },
+    {
+      codigo: 1200143015216,
+      rct: "100074329WCLNRS40",
+      precoPromocao: 0,
+      precoTabela: 599.99,
+      saldo: 1,
+      localizacao: ""
+    },
+    {
+      codigo: 1200143024010,
+      rct: "100074348UCOAPT36",
+      precoPromocao: 0,
+      precoTabela: 499.99,
+      saldo: 1,
+      localizacao: ""
+    },
+    {
+      codigo: 1200143024041,
+      rct: "100074348UCOAPT37",
+      precoPromocao: 0,
+      precoTabela: 499.99,
+      saldo: 1,
+      localizacao: ""
+    },
+    {
+      codigo: 1200143029756,
+      rct: "100074361WCLRRS34",
+      precoPromocao: 0,
+      precoTabela: 599.99,
+      saldo: 1,
+      localizacao: ""
+    },
+    {
+      codigo: 1200143029909,
+      rct: "100074361WCLRRS38",
+      precoPromocao: 0,
+      precoTabela: 599.99,
+      saldo: 1,
+      localizacao: ""
+    },
+    {
+      codigo: 1200143029923,
+      rct: "100074361WCLRRS39",
+      precoPromocao: 0,
+      precoTabela: 599.99,
+      saldo: 1,
+      localizacao: ""
+    },
+    {
+      codigo: 1200143035443,
+      rct: "100074373WCLRCZ35",
+      precoPromocao: 0,
+      precoTabela: 599.99,
+      saldo: 1,
+      localizacao: ""
+    },
+    {
+      codigo: 1200143035535,
+      rct: "100074373WCLRCZ37",
+      precoPromocao: 0,
+      precoTabela: 599.99,
+      saldo: 1,
+      localizacao: ""
+    },
+    {
+      codigo: 1200143035566,
+      rct: "100074373WCLRCZ38",
+      precoPromocao: 0,
+      precoTabela: 599.99,
+      saldo: 1,
+      localizacao: ""
+    },
+    {
+      codigo: 1200143036594,
+      rct: "100074376WCLRBC34",
+      precoPromocao: 0,
+      precoTabela: 599.99,
+      saldo: 1,
+      localizacao: ""
+    },
+    {
+      codigo: 1200143038314,
+      rct: "100074380WCLRAZ38",
+      precoPromocao: 0,
+      precoTabela: 599.99,
+      saldo: 1,
+      localizacao: ""
+    },
+    {
+      codigo: 1200143044759,
+      rct: "100074404MCLRLA42",
+      precoPromocao: 0,
+      precoTabela: 749.99,
+      saldo: 1,
+      localizacao: ""
+    },
+    {
+      codigo: 1200143053010,
+      rct: "100074425MFE5AZ43",
+      precoPromocao: 0,
+      precoTabela: 799.99,
+      saldo: 1,
+      localizacao: ""
+    },
+    {
+      codigo: 1200143053072,
+      rct: "100074425MFE5AZ44",
+      precoPromocao: 0,
+      precoTabela: 799.99,
+      saldo: 1,
+      localizacao: ""
+    },
+    {
+      codigo: 1200143053225,
+      rct: "100074426WFE5BC34",
+      precoPromocao: 0,
+      precoTabela: 799.99,
+      saldo: 1,
+      localizacao: ""
+    },
+    {
+      codigo: 1200143053362,
+      rct: "100074426WFE5BC38",
+      precoPromocao: 0,
+      precoTabela: 799.99,
+      saldo: 1,
+      localizacao: ""
+    },
+    {
+      codigo: 1200143053638,
+      rct: "100074427WFE5BG34",
+      precoPromocao: 0,
+      precoTabela: 799.99,
+      saldo: 1,
+      localizacao: ""
+    }
+  ]
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // Dados reais dos produtos
+        const tabelaProdutos = {
+          produtos: [
+            {
+              codigo: "4066756633288",
+              rct: "002760MWTPPT44",
+              precoPromocao: 100.00,
+              precoTabela: 349.99,
+              saldo: 5,
+              localizacao: "1-3"  // cabinet 1, Prateleira 3
+            },
+            {
+              codigo: "0196464441616",
+              rct: "100000103FSHBC34",
+              precoPromocao: 399.99,
+              precoTabela: 499.99,
+              saldo: null,
+              localizacao: "2-6"  // cabinet 2, Prateleira 6
+            },
+            {
+              codigo: "0054871712197",
+              rct: "002240WFSHPT34",
+              precoPromocao: 0.00,
+              precoTabela: 499.99,
+              saldo: null,
+              localizacao: "8-1"   // cabinet 8, Prateleira 1
+            },
+            {
+              codigo: "0054871712203",
+              rct: "002240WFSHPT35",
+              precoPromocao: 0.00,
+              precoTabela: 499.99,
+              saldo: null,
+              localizacao: "8-2"   // cabinet 8, Prateleira 2
+            },
+            {
+              codigo: "0054871712227",
+              rct: "002240WFSHPT36",
+              precoPromocao: 0.00,
+              precoTabela: 499.99,
+              saldo: null,
+              localizacao: "8-3"   // cabinet 8, Prateleira 3
+            },
+            {
+              codigo: "0054871712234",
+              rct: "002240WFSHPT37",
+              precoPromocao: 0.00,
+              precoTabela: 499.99,
+              saldo: null,
+              localizacao: "8-4"   // cabinet 8, Prateleira 4
+            },
+            {
+              codigo: "0054871712241",
+              rct: "002240WFSHPT38",
+              precoPromocao: 0.00,
+              precoTabela: 499.99,
+              saldo: null,
+              localizacao: "8-5"   // cabinet 8, Prateleira 5
+            },
+            {
+              codigo: "0054871712258",
+              rct: "002240WFSHPT39",
+              precoPromocao: 0.00,
+              precoTabela: 499.99,
+              saldo: null,
+              localizacao: "8-6"   // cabinet 8, Prateleira 6
+            }
+          ]
+        };
+
+            // Objeto estoque127 com o layout criado
+        const estoque127 = {
+  "dimensions": {
+    "width": 680,
+    "height": 1700
+  },
+  "cabinets": [
+    {
+      "id": "1",
+      "type": "grande",
+      "x": -19,
+      "y": 629,
+      "rotation": 270,
+      "products": {}
+    },
+    {
+      "id": "2",
+      "type": "grande",
+      "x": -18,
+      "y": 528,
+      "rotation": 270,
+      "products": {}
+    },
+    {
+      "id": "3",
+      "type": "grande",
+      "x": -19.265625,
+      "y": 426.828125,
+      "rotation": 270,
+      "products": {}
+    },
+    {
+      "id": "4",
+      "type": "grande",
+      "x": -18,
+      "y": 325,
+      "rotation": 270,
+      "products": {}
+    },
+    {
+      "id": "5",
+      "type": "grande",
+      "x": -18,
+      "y": 223,
+      "rotation": 270,
+      "products": {}
+    },
+    {
+      "id": "6",
+      "type": "grande",
+      "x": -19,
+      "y": 122,
+      "rotation": 270,
+      "products": {}
+    },
+    {
+      "id": "7",
+      "type": "grande",
+      "x": 102,
+      "y": 626,
+      "rotation": 90,
+      "products": {}
+    },
+    {
+      "id": "8",
+      "type": "grande",
+      "x": 101,
+      "y": 525,
+      "rotation": 90,
+      "products": {}
+    },
+    {
+      "id": "9",
+      "type": "grande",
+      "x": 101,
+      "y": 424,
+      "rotation": 90,
+      "products": {}
+    },
+
+  ]
+};
+
+        // Variável para armazenar os resultados atuais
+        let resultadosAtuais = [];
+
+        function realizarBusca() {
+            const codigo = document.getElementById('codigo').value.trim();
+            const rct = document.getElementById('rct').value.trim();
+            const loading = document.getElementById('loading');
+            const tableBody = document.getElementById('tableBody');
+
+            if (!codigo && !rct) {
+                alert('Preencha pelo menos um campo para buscar!');
+                return;
+            }
+
+            loading.style.display = 'block';
+            tableBody.innerHTML = '';
+
+            setTimeout(() => {
+                tableBody.innerHTML = '';
+
+                resultadosAtuais = tabelaProdutos.produtos.filter(item => {
+                    // Se ambos os campos foram preenchidos
+                    if (codigo && rct) {
+                        return item.codigo.includes(codigo) && item.rct.includes(rct);
+                    }
+                    // Se apenas código foi preenchido, busca parcial no código
+                    else if (codigo) {
+                        return item.codigo.includes(codigo);
+                    }
+                    // Se apenas RCT foi preenchido, busca parcial no RCT
+                    else {
+                        return item.rct.includes(rct);
+                    }
+                });
+
+                if (resultadosAtuais.length === 0) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = '<td colspan="6" style="text-align: center;">Nenhum produto encontrado</td>';
+                    tableBody.appendChild(tr);
+                    limparMarcadores();
+                } else {
+                    resultadosAtuais.forEach((item, index) => {
+                        const tr = document.createElement('tr');
+                        tr.className = 'fade-in';
+                        tr.innerHTML = `
+                            <td>${item.codigo}</td>
+                            <td>${item.rct}</td>
+                            <td>R$ ${item.precoPromocao.toFixed(2)}</td>
+                            <td>R$ ${item.precoTabela.toFixed(2)}</td>
+                            <td>${item.saldo !== null ? item.saldo : 'N/A'}</td>
+                            <td>${item.localizacao || 'Não informada'}</td>
+                        `;
+                        tableBody.appendChild(tr);
+                    });
+
+                    // Marcar as localizações dos produtos encontrados
+                    marcarLocalizacoes(resultadosAtuais);
+                }
+
+                loading.style.display = 'none';
+            }, 500);
+        }
+
+        function limparBusca() {
+            document.getElementById('codigo').value = '';
+            document.getElementById('rct').value = '';
+            document.getElementById('tableBody').innerHTML = '';
+            document.getElementById('loading').style.display = 'none';
+            limparMarcadores();
+        }
+
+        function limparMarcadores() {
+            // Remove todos os marcadores existentes
+            document.querySelectorAll('.location-marker').forEach(marker => marker.remove());
+            
+            // Remove os marcadores das prateleiras
+            const cabinetView = document.getElementById('cabinetView');
+            if (cabinetView) {
+                cabinetView.querySelectorAll('.shelf-marker').forEach(marker => marker.remove());
+            }
+        }
+
+        function marcarLocalizacoes(produtos) {
+            // Primeiro limpa os marcadores antigos
+            limparMarcadores();
+            
+            // Para cada produto encontrado
+            produtos.forEach(produto => {
+                if (produto.localizacao) {
+                    const [cabinetId, shelfId] = produto.localizacao.split('-');
+                    
+                    // Marcar o armário
+                    const cabinetElement = document.getElementById(cabinetId);
+                    if (cabinetElement) {
+                        const marker = document.createElement('div');
+                        marker.className = 'location-marker cabinet-marker';
+                        cabinetElement.appendChild(marker);
+                        
+                        // Ao clicar no armário, mostrar as prateleiras marcadas
+                        cabinetElement.addEventListener('click', function() {
+                            setTimeout(() => {
+                                marcarPrateleira(shelfId);
+                            }, 50);
+                        });
+                    }
+                }
+            });
+        }
+
+        function marcarPrateleira(shelfId) {
+            // Limpa marcadores antigos de prateleira
+            const cabinetView = document.getElementById('cabinetView');
+            if (cabinetView) {
+                cabinetView.querySelectorAll('.shelf-marker').forEach(marker => marker.remove());
+                
+                // Adiciona marcador na prateleira correspondente
+                const shelfElement = cabinetView.querySelector(`.shelf-${shelfId}`);
+                if (shelfElement) {
+                    const marker = document.createElement('div');
+                    marker.className = 'location-marker shelf-marker';
+                    shelfElement.appendChild(marker);
+                }
+            }
+        }
+
+        function renderStaticStock() {
+            const container = document.getElementById('plantContainerStatic');
+            
+            container.style.width = `${estoque127.dimensions.width}px`;
+            container.style.height = `${estoque127.dimensions.height}px`;
+            
+            estoque127.cabinets.forEach(cab => {
+                const cabinet = document.createElement('div');
+                cabinet.className = `cabinet-static ${cab.type}`;
+                cabinet.id = cab.id;
+                cabinet.style.left = `${cab.x}px`;
+                cabinet.style.top = `${cab.y}px`;
+                cabinet.style.transform = `rotate(${cab.rotation}deg)`;
+                cabinet.textContent = cab.id;
+                
+                cabinet.addEventListener('click', function() {
+                    showCabinetDetails(cab);
+                });
+                
+                container.appendChild(cabinet);
+            });
+        }
+
+        function showCabinetDetails(cabinet) {
+            const cabinetInfo = document.getElementById('cabinetDisplayInfo');
+            const cabinetView = document.getElementById('cabinetView');
+            
+            cabinetView.innerHTML = '';
+            cabinetView.className = 'cabinet-view ' + cabinet.type;
+            
+            cabinetInfo.innerHTML = `
+                <p><strong>ID:</strong> ${cabinet.id}</p>
+                <p><strong>Tipo:</strong> ${cabinet.type === 'grande' ? 'Grande' : 'Pequeno'}</p>
+            `;
+            
+            for (let i = 1; i <= 6; i++) {
+                const shelf = document.createElement('div');
+                shelf.className = `shelf ${cabinet.type} shelf-${i}${cabinet.type === 'pequeno' ? ' pequeno' : ''}`;
+                shelf.innerHTML = `<span class="shelf-label">Prateleira ${i}</span>`;
+                
+                if (cabinet.products && cabinet.products[`shelf-${i}`]) {
+                    cabinet.products[`shelf-${i}`].forEach(product => {
+                        const productElement = document.createElement('div');
+                        productElement.className = 'product-display';
+                        productElement.textContent = product.name;
+                        shelf.appendChild(productElement);
+                    });
+                }
+                
+                cabinetView.appendChild(shelf);
+            }
+            
+            // Verifica se este armário tem produtos marcados
+            const produtosNoArmario = resultadosAtuais.filter(produto => {
+                if (produto.localizacao) {
+                    const [cabId, _] = produto.localizacao.split('-');
+                    return cabId === cabinet.id;
+                }
+                return false;
+            });
+            
+            if (produtosNoArmario.length > 0) {
+                // Para cada produto neste armário, marca a prateleira correspondente
+                produtosNoArmario.forEach(produto => {
+                    const [_, shelfId] = produto.localizacao.split('-');
+                    marcarPrateleira(shelfId);
+                });
+            }
+        }
+
+        window.onload = function() {
+            renderStaticStock();
+            
+            if (estoque127.cabinets.length > 0) {
+                showCabinetDetails(estoque127.cabinets[0]);
+            }
+        };
+    </script>
+</body>
+</html>
